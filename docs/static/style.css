@@ -1,0 +1,71 @@
+/* Project page styling — adapted from the Nerfies template (https://nerfies.github.io/). */
+
+body {
+  font-family: 'Google Sans', 'Noto Sans', sans-serif;
+}
+
+.eccv-badge {
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.publication-title {
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.publication-authors {
+  margin-bottom: 0.75rem;
+}
+
+.publication-authors .author-block {
+  display: inline-block;
+  margin: 0 0.15rem;
+}
+
+.publication-authors a {
+  color: #3273dc;
+}
+
+.publication-institutions {
+  color: #4a4a4a;
+  margin-bottom: 1.75rem;
+}
+
+.publication-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.publication-links .link-block {
+  display: inline-block;
+}
+
+/* Disabled "coming soon" buttons */
+.button.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.coming-soon-box {
+  border: 1px dashed #b5b5b5;
+  background-color: #fafafa;
+}
+
+.coming-soon-box .title {
+  margin-bottom: 0.75rem;
+}
+
+.bibtex {
+  background-color: #ffffff;
+  border: 1px solid #dbdbdb;
+  border-radius: 6px;
+  padding: 1.25rem;
+  font-size: 0.9rem;
+  overflow-x: auto;
+  white-space: pre;
+}
