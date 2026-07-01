@@ -54,9 +54,9 @@
 
         <div class="publication-links">
           <span class="link-block">
-            <a class="button is-dark is-rounded is-disabled" tabindex="-1" aria-disabled="true">
+            <a class="button is-dark is-rounded" href="https://arxiv.org/abs/2606.30777">
               <span class="icon"><i class="ai ai-arxiv"></i></span>
-              <span>arXiv (soon)</span>
+              <span>arXiv</span>
             </a>
           </span>
           <span class="link-block">
@@ -73,6 +73,38 @@
           </span>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- Teaser figure -->
+  <section class="section pt-0">
+    <div class="container is-max-desktop">
+      <figure class="image">
+        <img src="./static/images/teaser.png" alt="t-SNE projection of learned scenario embeddings">
+      </figure>
+      <p class="caption">
+        <b>t-SNE projection of learned scenario embeddings</b> (contours indicate density). Dataset proximity (e.g., ETH/inD, INTERACTION/WOMD) indicates potential for cross-dataset pretraining or knowledge transfer.
+      </p>
+    </div>
+  </section>
+
+  <!-- Abstract -->
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Abstract</h2>
+      <div class="content has-text-justified">
+        <p>
+          The growing availability of trajectory datasets has fueled major advances in data-driven motion prediction.
+          Yet, models trained on one dataset often fail to generalize beyond their training domain as a result of
+          differences in scene layouts, agent behaviors, and sensing conditions. A framework that learns latent
+          representations of datasets and quantifies their similarity using distributional metrics is presented.
+          This large-scale study covers 24 major datasets, including the most widely used motion-prediction
+          benchmarks, and shows that the resulting transferability scores strongly correlate with cross-dataset
+          model performance. The results provide practical guidance for dataset selection, pretraining, and
+          large-scale foundation models for motion prediction, paving the way toward more generalizable and
+          robust predictive systems.
+        </p>
       </div>
     </div>
   </section>

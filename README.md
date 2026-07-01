@@ -3,7 +3,7 @@
 # Unveiling Transferability in Trajectory Prediction<br>via Latent Scene Embeddings
 
 <p>
-  <img src="https://img.shields.io/badge/arXiv-coming%20soon-lightgrey?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv coming soon">
+  <a href="https://arxiv.org/abs/2606.30777"><img src="https://img.shields.io/badge/arXiv-2606.30777-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv"></a>
   <img src="https://img.shields.io/badge/Paper-coming%20soon-lightgrey?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="Paper coming soon">
   <a href="https://westny.github.io/transferatlas/"><img src="https://img.shields.io/badge/Project-Page-1f6feb?style=for-the-badge&logo=githubpages&logoColor=white" alt="Project Page"></a>
 </p>
