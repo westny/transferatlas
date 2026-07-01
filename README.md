@@ -21,6 +21,20 @@
 
 </div>
 
+## Overview
+
+The growing availability of trajectory datasets has fueled major advances in data-driven motion prediction.
+Yet, models trained on one dataset often fail to generalize beyond their training domain as a result of differences in scene layouts, agent behaviors, and sensing conditions.
+We present a framework that learns latent representations of datasets and quantifies their similarity using distributional metrics.
+This large-scale study covers 24 major datasets — including the most widely used motion-prediction benchmarks — and shows that the resulting transferability scores strongly correlate with cross-dataset model performance.
+The results provide practical guidance for dataset selection, pretraining, and large-scale foundation models for motion prediction.
+
+<div align="center">
+  <img src="https://westny.github.io/transferatlas/static/images/teaser.png" width="75%" alt="t-SNE projection of learned scenario embeddings">
+  <br>
+  <sub><b>t-SNE projection of learned scenario embeddings</b> (contours indicate density). Dataset proximity (e.g., ETH/inD, INTERACTION/WOMD) indicates potential for cross-dataset pretraining or knowledge transfer.</sub>
+</div>
+
 ## 🚧 Code coming soon
 
 The code for this project will be released here soon. Stay tuned!
