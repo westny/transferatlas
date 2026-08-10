@@ -35,9 +35,32 @@ The results provide practical guidance for dataset selection, pretraining, and l
   <sub><b>t-SNE projection of learned scenario embeddings</b> (contours indicate density). Dataset proximity (e.g., ETH/inD, INTERACTION/WOMD) indicates potential for cross-dataset pretraining or knowledge transfer.</sub>
 </div>
 
-## 🚧 Code coming soon
+## Installation
 
-The code for this project will be released here soon. Stay tuned!
+TransferAtlas uses [uv](https://docs.astral.sh/uv/) and supports Python
+3.10-3.13. Choose exactly one PyTorch backend when creating the environment:
+
+```bash
+# CPU-only PyTorch
+uv sync --extra cpu
+
+# PyTorch with CUDA 12.6
+uv sync --extra cu126
+```
+
+The two profiles are mutually exclusive because `pyg-lib` must be compiled for
+the selected PyTorch and CUDA combination. Re-run the chosen command after
+switching profiles; uv will synchronize `.venv` with the checked-in lockfile.
+
+The installed commands are:
+
+```text
+transferatlas-train
+transferatlas-latents
+transferatlas-kl
+```
+
+Use `uv run <command> --help` to inspect the arguments for each workflow.
 
 ## Citation
 

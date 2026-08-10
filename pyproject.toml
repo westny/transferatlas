@@ -1,0 +1,146 @@
+[project]
+name = "transferatlas"
+version = "0.1.0"
+description = "Trajectory transferability analysis through latent scene embeddings"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+
+dependencies = [
+    "numpy>=1.26,<3",
+    "torch-geometric>=2.8,<2.9",
+    "lightning>=2.2,<3",
+    "torchmetrics>=1.3,<2",
+    "pandas>=2,<4",
+    "matplotlib>=3.7,<4",
+    "tqdm>=4.66,<5",
+    "pingouin>=0.5,<1",
+    "pyyaml>=6,<7",
+    "scipy>=1.10,<2",
+    "seaborn>=0.13,<1",
+    "wandb>=0.16,<1",
+]
+
+
+# ---------------------------------------------------------------------------
+# Hardware backends
+#
+# Install exactly one:
+#
+#   CPU / macOS:
+#       uv sync --extra cpu
+#
+#   CUDA 12.6:
+#       uv sync --extra cu126
+#
+# The extras are mutually exclusive; see [tool.uv].conflicts below.
+# ---------------------------------------------------------------------------
+
+[project.optional-dependencies]
+cpu = [
+    "torch==2.8.0",
+    "pyg-lib==0.6.0",
+]
+
+cu126 = [
+    "torch==2.8.0",
+    "pyg-lib==0.6.0",
+]
+
+[project.urls]
+Homepage = "https://westny.github.io/transferatlas/"
+Repository = "https://github.com/westny/transferatlas"
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.20,<2",
+    "pytest>=8,<10",
+]
+
+
+[project.scripts]
+transferatlas-train = "transferatlas.cli.train:main"
+transferatlas-latents = "transferatlas.cli.compute_latents:main"
+transferatlas-kl = "transferatlas.cli.compute_kl:main"
+
+
+# ---------------------------------------------------------------------------
+# Build
+# ---------------------------------------------------------------------------
+
+[build-system]
+requires = ["hatchling>=1.26,<2"]
+build-backend = "hatchling.build"
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/transferatlas"]
+
+
+[tool.uv]
+
+# CPU and CUDA environments are alternative installations, not additive.
+conflicts = [
+    [
+        { extra = "cpu" },
+        { extra = "cu126" },
+    ],
+]
+
+# pyg-lib is a compiled PyTorch extension. Require a matching pre-built wheel
+# rather than silently falling back to a local C++/CUDA build.
+no-build-package = ["pyg-lib"]
+
+
+# Select package sources according to the chosen hardware extra.
+[tool.uv.sources]
+
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu126", extra = "cu126" },
+]
+
+pyg-lib = [
+    { index = "pyg-cpu", extra = "cpu" },
+    { index = "pyg-cu126", extra = "cu126" },
+]
+
+
+# ---------------------------------------------------------------------------
+# PyTorch indexes
+# ---------------------------------------------------------------------------
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+
+[[tool.uv.index]]
+name = "pyg-cpu"
+url = "https://data.pyg.org/whl/torch-2.8.0+cpu.html"
+format = "flat"
+explicit = true
+
+
+[[tool.uv.index]]
+name = "pyg-cu126"
+url = "https://data.pyg.org/whl/torch-2.8.0+cu126.html"
+format = "flat"
+explicit = true
+
+[tool.basedpyright]
+pythonVersion = "3.10"
+pythonPlatform = "All"
+typeCheckingMode = "basic"
+reportPrivateImportUsage = false
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
