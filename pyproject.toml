@@ -139,10 +139,10 @@ explicit = true
 [tool.basedpyright]
 pythonVersion = "3.10"
 pythonPlatform = "All"
-typeCheckingMode = "basic"
+typeCheckingMode = "recommended"
 reportPrivateImportUsage = false
 
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]

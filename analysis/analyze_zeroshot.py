@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from collections.abc import Callable
 from pathlib import Path
 
@@ -173,7 +174,20 @@ def combine_kl_and_evaluation(
     return pd.DataFrame(data_dict)
 
 
+def create_parser() -> ArgumentParser:
+    parser = ArgumentParser(
+        description="Reproduce the paper's zero-shot transfer correlation."
+    )
+    parser.add_argument(
+        "--plot",
+        action="store_true",
+        help="display the correlation plot (requires a graphical backend and LaTeX)",
+    )
+    return parser
+
+
 def main() -> None:
+    args = create_parser().parse_args()
     eval_data_path = Path("results/paper/zeroshot-evaluation.csv")
     kl_matrix_path = Path("results/paper/kl_divergence.csv")
     metric: Metric = "val_min_ade_3s"
@@ -186,7 +200,7 @@ def main() -> None:
         n_boot=None,
         ignore_eval_datasets=skip,
         ignore_train_datasets=skip,
-        plot=True,
+        plot=args.plot,
     )
     print(f"Overall correlation: {result.rho:.4f} (p={result.p_value:.4f})")
 

@@ -44,22 +44,6 @@ body {
   display: inline-block;
 }
 
-/* Disabled "coming soon" buttons */
-.button.is-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.coming-soon-box {
-  border: 1px dashed #b5b5b5;
-  background-color: #fafafa;
-}
-
-.coming-soon-box .title {
-  margin-bottom: 0.75rem;
-}
-
 .bibtex {
   background-color: #ffffff;
   border: 1px solid #dbdbdb;

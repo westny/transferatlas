@@ -54,7 +54,6 @@ datamodule:
     # Names of datasets to use for training and validation, can be:
     # 1. A single dataset name as a string, e.g., "highD"
     # 2. A list of dataset names, e.g., ["highD", "inD"]
-    # 3. "all" to use all available datasets in the root directory.
     # Note: the names are case-sensitive and must match the dataset folder names.
     name: ['A43', 'SIND', 'ad4che', 'apollo', 'argoverse', 'av2', 'eth', 'exiD', 'highD', 'hotel', 'i80', 'inD', 'interact', 'lyft', 'nuscenes', 'openDD', 'rounD', 'uniD', 'univ', 'us101', 'vod', 'waymo', 'zara1', 'zara2']
     # Randomize the reference agent during training.

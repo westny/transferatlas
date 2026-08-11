@@ -4,7 +4,6 @@
 
 <p>
   <a href="https://arxiv.org/abs/2606.30777"><img src="https://img.shields.io/badge/arXiv-2606.30777-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv"></a>
-  <img src="https://img.shields.io/badge/Paper-coming%20soon-lightgrey?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="Paper coming soon">
   <a href="https://westny.github.io/transferatlas/"><img src="https://img.shields.io/badge/Project-Page-1f6feb?style=for-the-badge&logo=githubpages&logoColor=white" alt="Project Page"></a>
 </p>
 
@@ -48,10 +47,6 @@ uv sync --extra cpu
 uv sync --extra cu126
 ```
 
-The two profiles are mutually exclusive because `pyg-lib` must be compiled for
-the selected PyTorch and CUDA combination. Re-run the chosen command after
-switching profiles; uv will synchronize `.venv` with the checked-in lockfile.
-
 The installed commands are:
 
 ```text
@@ -61,6 +56,65 @@ transferatlas-kl
 ```
 
 Use `uv run <command> --help` to inspect the arguments for each workflow.
+
+## Data layout
+
+TransferAtlas consumes trajectory scenes preprocessed with
+[Dronalize](https://github.com/westny/dronalize). Set the dataset root in
+`configs/trace.yml` or pass `--root` to a command. The expected directory layout
+is:
+
+```text
+<root>/
+  <dataset>/
+    train/*.pkl
+    val/*.pkl
+    test/*.pkl
+```
+
+## Usage
+
+A model checkpoint can be used to compute latent statistics for one
+preprocessed dataset:
+
+```bash
+uv run transferatlas-latents \
+  --config trace \
+  --root /path/to/preprocessed-data \
+  --dataset highD \
+  --checkpoint artifacts/checkpoints/trace32.pt \
+  --use-cuda true \
+  --dry-run false
+```
+
+Statistics are written below `artifacts/latent-statistics/trace32/`. After
+computing more than one dataset, create the directed KL matrix with:
+
+```bash
+uv run transferatlas-kl \
+  --stats-dir artifacts/latent-statistics/trace32 \
+  --output artifacts/latent-statistics/trace32/kl_divergence.csv
+```
+
+The numerical analyses included with the paper data run independently of the
+raw trajectory datasets:
+
+```bash
+uv run python -m analysis.analyze_zeroshot
+uv run python -m analysis.analyze_forgetting
+```
+
+## Reproduction scope
+
+This repository provides the TRACE latent-embedding model, latent Gaussian and
+KL computation, a trained checkpoint, and the two analyses above. It does not
+include the third-party trajectory datasets, their complete preparation
+workflow, the QCNet experiments, or scripts for every figure and ablation in the
+paper.
+
+The released latent statistics and KL results use covariance jitter
+`alpha = 1e-4`. The `3e-3` value stated in Equation 6 of the paper is a typo.
+`configs/trace.yml` records model parameters and training hyperparameters.
 
 ## Citation
 
