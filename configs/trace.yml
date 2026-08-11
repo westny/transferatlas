@@ -1,0 +1,72 @@
+# Copyright 2024, Theodor Westny. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# General Description
+experiment_name: TRACE - Trajectory Comparison via Embeddings
+
+# Model Configuration
+model:
+    name: TRACE
+    dt: 0.1
+
+    num_inputs: 5
+    num_outputs: 2
+    num_hidden: 128
+    num_latents: 32
+
+    encoder:
+        num_layers: 4
+        dropout: 0.1
+
+    predictor:
+        num_layers: 3
+        dropout: 0.1
+
+    reconstructor:
+        num_layers: 3
+        dropout: 0.1
+
+    lane_graph:
+        num_inputs: 2
+        num_hidden: 128
+        num_layers: 4
+        edge_feats: 16
+        dropout: 0.5
+
+# Data module configuration
+datamodule:
+    # Batch size for training and validation.
+    batch_size: 64
+    # Root directory where all datasets are stored using format based on the
+    # `dronalize` dataset processing.
+    root: /media/data/trajdata/
+    # Names of datasets to use for training and validation, can be:
+    # 1. A single dataset name as a string, e.g., "highD"
+    # 2. A list of dataset names, e.g., ["highD", "inD"]
+    # 3. "all" to use all available datasets in the root directory.
+    # Note: the names are case-sensitive and must match the dataset folder names.
+    name: ['A43', 'SIND', 'ad4che', 'apollo', 'argoverse', 'av2', 'eth', 'exiD', 'highD', 'hotel', 'i80', 'inD', 'interact', 'lyft', 'nuscenes', 'openDD', 'rounD', 'uniD', 'univ', 'us101', 'vod', 'waymo', 'zara1', 'zara2']
+    # Randomize the reference agent during training.
+    shuffle: true
+
+# Training Configuration
+training:
+    epochs: 100
+    radius: 150
+    map_radius: 100
+    agent_neighbors: 10
+    map_neighbors: 50
+    lr: 0.001
+    edge_dropout: 0.25
+    alpha: 1.0
