@@ -5,13 +5,14 @@ import torch.nn.functional as F
 from torch import nn
 from torch_geometric.utils import subgraph
 
+from transferatlas.config import EncoderConfig
 from transferatlas.models.trace.layers.min_gru_gnn_cell import GRUGNNCell
 
 
 class Encoder(nn.Module):
     """Spherical TRACE scene encoder."""
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: EncoderConfig) -> None:
         super().__init__()
         num_hidden = config["num_hidden"]
         num_latents = config["num_latents"]

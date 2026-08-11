@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import time
-from argparse import Namespace
 from pathlib import Path
 
 from lightning.pytorch import Trainer, seed_everything
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import Callback, ModelCheckpoint
 from torch.multiprocessing import set_sharing_strategy
 
-from transferatlas.cli.arguments import parse_train_args
+from transferatlas.cli.arguments import TrainArgs, parse_train_args
+from transferatlas.config import ExperimentConfig
 from transferatlas.data.datamodule import TrajectoryDataModule
 from transferatlas.data.dataset import dataset_group_name
 from transferatlas.models.trace.lightning import TraceLightningModule
@@ -25,8 +25,8 @@ set_sharing_strategy("file_system")
 
 
 def create_run_directory(
-    args: Namespace,
-    config: dict,
+    args: TrainArgs,
+    config: ExperimentConfig,
     dataset_name: str,
     model_name: str,
 ) -> tuple[Path, str]:
@@ -50,8 +50,8 @@ def create_run_directory(
 
 
 def train(
-    args: Namespace,
-    config: dict,
+    args: TrainArgs,
+    config: ExperimentConfig,
 ) -> None:
     require_graph_backend()
     devices, strategy, accelerator = configure_trainer_hardware(args)
@@ -64,7 +64,7 @@ def train(
 
     datamodule = TrajectoryDataModule(config["datamodule"], args)
 
-    callbacks = []
+    callbacks: list[Callback] = []
     if args.store_model and not args.dry_run:
         copy_config_file(args.config, run_directory)
         model_checkpoint_all = ModelCheckpoint(
@@ -136,7 +136,7 @@ def train(
     )
 
     if args.store_model and not args.dry_run:
-        net.save_portable_checkpoint(
+        _ = net.save_portable_checkpoint(
             config["model"],
             run_directory / f"{full_save_name}.pt",
         )
@@ -144,7 +144,7 @@ def train(
 
 def main() -> None:
     args = parse_train_args()
-    seed_everything(args.seed, workers=True)
+    _ = seed_everything(args.seed, workers=True)
     config = load_config(args.config)
     if args.dataset:
         config["datamodule"]["name"] = args.dataset

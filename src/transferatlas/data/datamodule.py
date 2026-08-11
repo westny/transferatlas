@@ -1,36 +1,35 @@
 from __future__ import annotations
 
-from argparse import Namespace
-from collections.abc import Sequence
-from typing import Literal, Protocol, cast
+from typing import Literal
 
 from lightning.pytorch import LightningDataModule
-from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
+from torch.utils.data import DataLoader, WeightedRandomSampler
+from torch_geometric.data import HeteroData
 
+from transferatlas.cli.arguments import CommonArgs
+from transferatlas.config import DataModuleConfig
 from transferatlas.data.collate import collate_trajectory_batch
 from transferatlas.data.dataset import BalancedConcatDataset, TrajectoryDataset
 from transferatlas.data.transforms import CoordinateTransform
 
 
-class _WeightedDataset(Protocol):
-    sample_weights: Sequence[float]
+def _normalize_dataset_names(value: object) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if not isinstance(value, list) or not all(isinstance(name, str) for name in value):
+        raise TypeError("Dataset names must be a string or a list of strings.")
+    return value
 
 
 class TrajectoryDataModule(LightningDataModule):
-    train_dataset: Dataset | None = None
-    validation_dataset: Dataset | None = None
-    test_dataset: Dataset | None = None
+    train_dataset: BalancedConcatDataset | None = None
+    validation_dataset: BalancedConcatDataset | None = None
+    test_dataset: BalancedConcatDataset | None = None
 
-    def __init__(self, config: dict, args: Namespace) -> None:
+    def __init__(self, config: DataModuleConfig, args: CommonArgs) -> None:
         super().__init__()
         self.root = config["root"]
-        dataset_names = config["name"]
-        if isinstance(dataset_names, str):
-            dataset_names = [dataset_names]
-        if not isinstance(dataset_names, list) or not all(
-            isinstance(name, str) for name in dataset_names
-        ):
-            raise TypeError("Dataset names must be a string or a list of strings.")
+        dataset_names = _normalize_dataset_names(config["name"])
         if not dataset_names:
             raise ValueError("At least one dataset name is required.")
 
@@ -51,7 +50,9 @@ class TrajectoryDataModule(LightningDataModule):
         return self.persistent_workers and self.num_workers > 0
 
     @staticmethod
-    def _require_dataset(dataset: Dataset | None, split: str) -> Dataset:
+    def _require_dataset(
+        dataset: BalancedConcatDataset | None, split: str
+    ) -> BalancedConcatDataset:
         if dataset is None:
             raise RuntimeError(
                 f"The {split} dataset is unavailable; call setup() for that stage first."
@@ -97,9 +98,9 @@ class TrajectoryDataModule(LightningDataModule):
                 "test", self.validation_transform
             )
 
-    def train_dataloader(self) -> DataLoader:
+    def train_dataloader(self) -> DataLoader[HeteroData]:
         dataset = self._require_dataset(self.train_dataset, "train")
-        weights = cast(_WeightedDataset, dataset).sample_weights
+        weights = dataset.sample_weights
         sampler = WeightedRandomSampler(
             weights,
             num_samples=len(weights),
@@ -115,7 +116,7 @@ class TrajectoryDataModule(LightningDataModule):
             persistent_workers=self._keep_workers_alive,
         )
 
-    def val_dataloader(self) -> DataLoader:
+    def val_dataloader(self) -> DataLoader[HeteroData]:
         return DataLoader(
             self._require_dataset(self.validation_dataset, "validation"),
             batch_size=self.batch_size,
@@ -126,7 +127,7 @@ class TrajectoryDataModule(LightningDataModule):
             persistent_workers=self._keep_workers_alive,
         )
 
-    def test_dataloader(self) -> DataLoader:
+    def test_dataloader(self) -> DataLoader[HeteroData]:
         return DataLoader(
             self._require_dataset(self.test_dataset, "test"),
             batch_size=self.batch_size,

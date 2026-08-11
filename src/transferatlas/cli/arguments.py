@@ -1,7 +1,33 @@
 from __future__ import annotations
 
-from argparse import ArgumentParser, ArgumentTypeError, Namespace
+from argparse import ArgumentParser, ArgumentTypeError
 from collections.abc import Sequence
+from typing import Protocol, cast
+
+
+class CommonArgs(Protocol):
+    seed: int
+    use_cuda: bool
+    num_workers: int
+    pin_memory: bool
+    persistent_workers: bool
+    dry_run: bool
+    small_ds: bool
+    config: str
+    dataset: str
+    root: str
+
+
+class TrainArgs(CommonArgs, Protocol):
+    use_logger: bool
+    store_model: bool
+    add_name: str
+    checkpoint: str
+
+
+class LatentArgs(CommonArgs, Protocol):
+    add_name: str
+    checkpoint: str
 
 
 def str_to_bool(value: bool | str) -> bool:
@@ -24,7 +50,7 @@ def _add_boolean_argument(
     default: bool,
     help: str,
 ) -> None:
-    parser.add_argument(
+    _ = parser.add_argument(
         name,
         *aliases,
         type=str_to_bool,
@@ -37,7 +63,7 @@ def _add_boolean_argument(
 
 def create_common_parser() -> ArgumentParser:
     parser = ArgumentParser(add_help=False)
-    parser.add_argument(
+    _ = parser.add_argument(
         "--seed", type=int, default=42, help="random seed (default: 42)"
     )
     _add_boolean_argument(
@@ -47,7 +73,7 @@ def create_common_parser() -> ArgumentParser:
         default=False,
         help="use CUDA when available (default: False)",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--num-workers",
         "-nw",
         type=int,
@@ -81,19 +107,19 @@ def create_common_parser() -> ArgumentParser:
         default=False,
         help="use a small dataset subset (default: False)",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--config",
         "-c",
         default="trace",
         help="configuration name or YAML path (default: trace)",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--dataset",
         "-ds",
         default="",
         help="override the configured dataset name",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--root",
         "-r",
         default="",
@@ -121,13 +147,13 @@ def create_train_parser() -> ArgumentParser:
         default=False,
         help="save training checkpoints (default: False)",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--add-name",
         "-an",
         default="",
         help="suffix appended to generated checkpoint names",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--checkpoint",
         "--ckpt",
         default="",
@@ -141,13 +167,13 @@ def create_latent_parser() -> ArgumentParser:
         description="Compute latent Gaussian statistics for a dataset.",
         parents=[create_common_parser()],
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--add-name",
         "-an",
         default="",
         help="suffix appended to generated artifact names",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--checkpoint",
         "--ckpt",
         default="",
@@ -156,9 +182,11 @@ def create_latent_parser() -> ArgumentParser:
     return parser
 
 
-def parse_train_args(argv: Sequence[str] | None = None) -> Namespace:
-    return create_train_parser().parse_args(argv)
+def parse_train_args(argv: Sequence[str] | None = None) -> TrainArgs:
+    parsed = create_train_parser().parse_args(argv)
+    return cast(TrainArgs, cast(object, parsed))
 
 
-def parse_latent_args(argv: Sequence[str] | None = None) -> Namespace:
-    return create_latent_parser().parse_args(argv)
+def parse_latent_args(argv: Sequence[str] | None = None) -> LatentArgs:
+    parsed = create_latent_parser().parse_args(argv)
+    return cast(LatentArgs, cast(object, parsed))

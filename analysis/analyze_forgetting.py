@@ -106,5 +106,5 @@ if __name__ == "__main__":
     )
     print(
         f"Rho: {result.rho:.4f}, CI lower: {result.ci_lower:.4f}, "
-        f"CI upper: {result.ci_upper:.4f}"
+        + f"CI upper: {result.ci_upper:.4f}"
     )

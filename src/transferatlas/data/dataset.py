@@ -92,7 +92,7 @@ class TrajectoryDataset(Dataset):
         root: str,
         dataset: str,
         split: Literal["train", "val", "test"],
-        transform: Callable | None = None,
+        transform: Callable[[HeteroData], HeteroData] | None = None,
         small_data: bool = False,
     ) -> None:
         super().__init__(
@@ -131,7 +131,7 @@ class TrajectoryDataset(Dataset):
             return HeteroData(data)
 
 
-class BalancedConcatDataset(ConcatDataset):
+class BalancedConcatDataset(ConcatDataset[HeteroData]):
     """Concatenated datasets with sampling weights balanced by source size."""
 
     def __init__(self, datasets: list[TrajectoryDataset]) -> None:

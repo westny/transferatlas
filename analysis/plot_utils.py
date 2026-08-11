@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, TypedDict
+from typing import Literal, TypedDict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -94,7 +94,7 @@ class PlotConfig:
 
 def plot_matrix(
     labels: list[str] | tuple[list[str], list[str]],
-    matrix: npt.NDArray[Any],
+    matrix: npt.NDArray[np.float64] | npt.NDArray[np.int64],
     *,
     title: str,
     filename: Path | None = None,
@@ -143,15 +143,15 @@ def plot_matrix(
 
     if cell_colors is not None:
         for (i, j), color in cell_colors.items():
-            ax.add_patch(
+            _ = ax.add_patch(
                 Rectangle((j, i), 1, 1, fill=True, color=color, alpha=0.5, lw=0),
             )
 
-    plt.title(title, fontsize=14, pad=15)
-    plt.xlabel(xlabel if xlabel is not None else "Evaluation Dataset", fontsize=12)
-    plt.ylabel(ylabel if ylabel is not None else "Training Dataset", fontsize=12)
-    plt.xticks(rotation=45, ha="right", fontsize=10)
-    plt.yticks(rotation=0, fontsize=10)
+    _ = plt.title(title, fontsize=14, pad=15)
+    _ = plt.xlabel(xlabel if xlabel is not None else "Evaluation Dataset", fontsize=12)
+    _ = plt.ylabel(ylabel if ylabel is not None else "Training Dataset", fontsize=12)
+    _ = plt.xticks(rotation=45, ha="right", fontsize=10)
+    _ = plt.yticks(rotation=0, fontsize=10)
     plt.tight_layout()
 
     if filename is not None:
@@ -335,7 +335,7 @@ def compute_correlation(
             ci_upper=np.nan,
         )
 
-    return _to_correlation_result(pg.corr(x=x, y=y, method=method))  # pyright: ignore[reportArgumentType]
+    return _to_correlation_result(pg.corr(x=x, y=y, method=method))
 
 
 def bootstrap_correlation(
@@ -345,7 +345,7 @@ def bootstrap_correlation(
     n_boot: int = 10000,
     ci_level: float = 0.95,
 ) -> CorrelationResult:
-    def corr_func(x, y) -> float:
+    def corr_func(x: npt.ArrayLike, y: npt.ArrayLike) -> float:
         corr_res = compute_correlation(x, y, method=method, n_boot=None)
         return corr_res.rho
 
@@ -403,7 +403,7 @@ def plot_correlation(
     )
 
     hue = "group" if groups is not None else None
-    sns.scatterplot(
+    _ = sns.scatterplot(
         data=df,
         x="kl_divergence",
         y="eval_value",
@@ -420,19 +420,19 @@ def plot_correlation(
     ax.set_xscale("log")
     ax.set_yscale("log")
     if x_label is not None:
-        ax.set_xlabel(x_label + " (log scale)", fontsize=8)
+        _ = ax.set_xlabel(x_label + " (log scale)", fontsize=8)
     if y_label is not None:
-        ax.set_ylabel(y_label + " (log scale)", fontsize=8)
+        _ = ax.set_ylabel(y_label + " (log scale)", fontsize=8)
 
     if title:
-        ax.set_title(title, fontsize=10, pad=5)
+        _ = ax.set_title(title, fontsize=10, pad=5)
 
     # --- Grid ----------------------------------------------------------------
     ax.grid(True, which="major", ls="--", lw=0.75, alpha=0.6)
 
     # --- Legend --------------------------------------------------------------
     if groups is not None:
-        ax.legend(
+        _ = ax.legend(
             loc="best",
             fontsize=7,
             frameon=False,
@@ -442,7 +442,7 @@ def plot_correlation(
     x_min, x_max = ax.get_xlim()
     y_min, y_max = ax.get_ylim()
 
-    ax.annotate(
+    _ = ax.annotate(
         "",
         xy=(x_max, y_min),
         xytext=(x_min, y_min),
@@ -455,7 +455,7 @@ def plot_correlation(
         },
     )
 
-    ax.annotate(
+    _ = ax.annotate(
         "",
         xy=(x_min, y_max),
         xytext=(x_min, y_min),
@@ -469,8 +469,12 @@ def plot_correlation(
     )
 
     sns.despine(ax=ax, left=True, bottom=True)
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda val, _: f"{val:g}"))
-    ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda val, _: f"{val:g}"))
+
+    def format_tick(value: float, _position: int | None) -> str:
+        return f"{value:g}"
+
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_tick))
+    ax.yaxis.set_major_formatter(ticker.FuncFormatter(format_tick))
     ax.tick_params(axis="both", which="both", labelsize=7, length=0, width=0)
 
     if save_path is not None:

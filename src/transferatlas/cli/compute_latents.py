@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import warnings
-from argparse import Namespace
 from pathlib import Path
 
 import torch
@@ -10,7 +9,8 @@ from lightning.pytorch import seed_everything
 from torch.multiprocessing import set_sharing_strategy
 from tqdm import tqdm
 
-from transferatlas.cli.arguments import parse_latent_args
+from transferatlas.cli.arguments import LatentArgs, parse_latent_args
+from transferatlas.config import ExperimentConfig
 from transferatlas.data.datamodule import TrajectoryDataModule
 from transferatlas.data.dataset import dataset_group_name
 from transferatlas.models.trace.lightning import TraceLightningModule
@@ -124,7 +124,7 @@ def lowrank_cov_jitter(
 def update_running_mean_cov(
     n_old: int,
     mean_old: torch.Tensor | None,
-    M2_old: torch.Tensor | None,
+    m2_old: torch.Tensor | None,
     x: torch.Tensor,
 ) -> tuple[int, torch.Tensor, torch.Tensor]:
     """
@@ -137,9 +137,9 @@ def update_running_mean_cov(
     b = x.size(0)
 
     if b == 0:
-        if mean_old is None or M2_old is None:
+        if mean_old is None or m2_old is None:
             raise ValueError("Received empty first batch.")
-        return n_old, mean_old, M2_old
+        return n_old, mean_old, m2_old
 
     mean_batch = x.mean(dim=0)
     centered = x - mean_batch
@@ -148,17 +148,17 @@ def update_running_mean_cov(
     if n_old == 0:
         return b, mean_batch, M2_batch
 
-    if mean_old is None or M2_old is None:
-        raise ValueError("mean_old and M2_old must be initialized when n_old > 0.")
+    if mean_old is None or m2_old is None:
+        raise ValueError("mean_old and m2_old must be initialized when n_old > 0.")
 
     n_new = n_old + b
     delta = mean_batch - mean_old
 
     mean_new = mean_old + delta * (b / n_new)
 
-    M2_new = M2_old + M2_batch + torch.outer(delta, delta) * (n_old * b / n_new)
+    m2_new = m2_old + M2_batch + torch.outer(delta, delta) * (n_old * b / n_new)
 
-    return n_new, mean_new, M2_new
+    return n_new, mean_new, m2_new
 
 
 # -------------------------------------------------------------------------
@@ -167,8 +167,8 @@ def update_running_mean_cov(
 
 
 def compute(
-    args: Namespace,
-    config: dict,
+    args: LatentArgs,
+    config: ExperimentConfig,
     save_name: str,
 ) -> None:
     require_graph_backend()
@@ -219,15 +219,15 @@ def compute(
     n_scenes = 0
 
     mean_mu: torch.Tensor | None = None
-    M2: torch.Tensor | None = None
+    m2: torch.Tensor | None = None
     cov_within_sum: torch.Tensor | None = None
 
     device = torch.device(
         "cuda" if args.use_cuda and torch.cuda.is_available() else "cpu"
     )
 
-    model.to(device)
-    model.eval()
+    _ = model.to(device)
+    _ = model.eval()
 
     # ---------------------------------------------------------------------
     # Process batches
@@ -253,7 +253,7 @@ def compute(
             if scene_covariance.ndim != 3:
                 raise RuntimeError(
                     "Expected scene covariance shape [B, D, D], got "
-                    f"{tuple(scene_covariance.shape)}"
+                    + f"{tuple(scene_covariance.shape)}"
                 )
 
             if scene_covariance.size(1) != scene_mean.size(1) or scene_covariance.size(
@@ -261,17 +261,17 @@ def compute(
             ) != scene_mean.size(1):
                 raise RuntimeError(
                     "Scene covariance shape is incompatible with scene mean: "
-                    f"mean={tuple(scene_mean.shape)}, "
-                    f"covariance={tuple(scene_covariance.shape)}"
+                    + f"mean={tuple(scene_mean.shape)}, "
+                    + f"covariance={tuple(scene_covariance.shape)}"
                 )
 
             if cov_within_sum is None:
                 cov_within_sum = torch.zeros_like(scene_covariance[0])
 
-            n_scenes, mean_mu, M2 = update_running_mean_cov(
+            n_scenes, mean_mu, m2 = update_running_mean_cov(
                 n_scenes,
                 mean_mu,
-                M2,
+                m2,
                 scene_mean,
             )
 
@@ -280,7 +280,7 @@ def compute(
     if n_scenes == 0:
         raise RuntimeError("No scenes were processed; cannot compute statistics.")
 
-    if mean_mu is None or M2 is None or cov_within_sum is None:
+    if mean_mu is None or m2 is None or cov_within_sum is None:
         raise RuntimeError("Statistics were not initialized correctly.")
 
     # ---------------------------------------------------------------------
@@ -289,7 +289,7 @@ def compute(
 
     mean = mean_mu
 
-    cov_between = symmetrize(M2 / n_scenes)
+    cov_between = symmetrize(m2 / n_scenes)
     cov_within = symmetrize(cov_within_sum / n_scenes)
     covariance, eps = lowrank_cov_jitter(
         cov_between + cov_within,
@@ -335,7 +335,7 @@ def compute(
 
 def main() -> None:
     args = parse_latent_args()
-    seed_everything(args.seed, workers=True)
+    _ = seed_everything(args.seed, workers=True)
 
     config = load_config(args.config)
     if args.dataset:

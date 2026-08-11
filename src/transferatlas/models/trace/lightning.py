@@ -1,18 +1,29 @@
 from __future__ import annotations
 
+from collections.abc import Sized
 from logging import getLogger
+from typing import Protocol, cast
 
 import lightning.pytorch as pl
 import torch
 from lightning.pytorch.utilities.types import OptimizerLRScheduler
-from torch import nn
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import radius, radius_graph
 from torch_geometric.utils import dropout_edge, scatter, subgraph, to_undirected
 
+from transferatlas.config import TrainingConfig
 from transferatlas.metrics import MinADE, MinFDE
+from transferatlas.models.trace.model import TraceModel
 
 logger = getLogger(__name__)
+
+
+class _DataModuleWithTrainLoader(Protocol):
+    def train_dataloader(self) -> Sized: ...
+
+
+class _TrainerWithDataModule(Protocol):
+    datamodule: _DataModuleWithTrainLoader
 
 
 def compute_batched_scene_statistics(
@@ -26,7 +37,7 @@ def compute_batched_scene_statistics(
     if batch.ndim != 1 or batch.numel() != z.size(0):
         raise ValueError(
             "Expected batch to have shape [N] matching z, got "
-            f"{tuple(batch.shape)} for {z.size(0)} rows."
+            + f"{tuple(batch.shape)} for {z.size(0)} rows."
         )
     if batch.numel() == 0:
         raise ValueError("At least one agent embedding is required.")
@@ -74,7 +85,7 @@ def compute_batched_scene_statistics(
 
 
 class TraceLightningModule(pl.LightningModule):
-    def __init__(self, model: nn.Module, config: dict) -> None:
+    def __init__(self, model: TraceModel, config: TrainingConfig) -> None:
         super().__init__()
         self.model = model
         self.max_epochs = config["epochs"]
@@ -98,12 +109,19 @@ class TraceLightningModule(pl.LightningModule):
         self.min_ade = MinADE()
         self.min_fde = MinFDE()
 
-    def forward(self, data: HeteroData, tf_prob: float = 0.0) -> dict:
+    def forward(
+        self, data: HeteroData, tf_prob: float = 0.0
+    ) -> dict[str, torch.Tensor]:
         data = self.prepare_graph(data)
         out = self.model(data, tf_prob=tf_prob)
         return out
 
-    def create_agent_edges(self, pos, batch, mask):
+    def create_agent_edges(
+        self,
+        pos: torch.Tensor,
+        batch: torch.Tensor,
+        mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         pos = pos[:, -1]
 
         edge_index = radius_graph(
@@ -185,7 +203,9 @@ class TraceLightningModule(pl.LightningModule):
         return data
 
     @staticmethod
-    def reconstruction_loss(data: HeteroData, out: dict) -> torch.Tensor:
+    def reconstruction_loss(
+        data: HeteroData, out: dict[str, torch.Tensor]
+    ) -> torch.Tensor:
         mask = data["agent"]["input_mask"]
 
         trg = out["x"]
@@ -204,7 +224,7 @@ class TraceLightningModule(pl.LightningModule):
         return loss
 
     @staticmethod
-    def prediction_loss(data: HeteroData, out: dict) -> torch.Tensor:
+    def prediction_loss(data: HeteroData, out: dict[str, torch.Tensor]) -> torch.Tensor:
         mask = data["agent"]["valid_mask"]
 
         trg = out["y"]
@@ -258,7 +278,7 @@ class TraceLightningModule(pl.LightningModule):
 
         return loss
 
-    def validation_step(self, data: HeteroData, *args) -> None:
+    def validation_step(self, data: HeteroData, *args: object) -> None:
         mask = data["agent"]["valid_mask"]
         out = self(data)
         z = out["z"]
@@ -293,7 +313,8 @@ class TraceLightningModule(pl.LightningModule):
         optimizer = torch.optim.AdamW(
             self.parameters(), lr=self.learning_rate, weight_decay=0.01
         )
-        batches = len(self.trainer.datamodule.train_dataloader())  # type: ignore
+        trainer = cast(_TrainerWithDataModule, cast(object, self.trainer))
+        batches = len(trainer.datamodule.train_dataloader())
         total_steps = self.max_epochs * batches
 
         cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -316,7 +337,7 @@ class TraceLightningModule(pl.LightningModule):
     ) -> dict[str, torch.Tensor]:
         """Compute full scene-level Gaussian statistics on the CPU."""
         was_training = self.training
-        self.eval()
+        _ = self.eval()
 
         with torch.no_grad():
             data = self.prepare_graph(data)
@@ -329,6 +350,6 @@ class TraceLightningModule(pl.LightningModule):
             result = {key: value.detach().cpu() for key, value in statistics.items()}
 
         if was_training:
-            self.train()
+            _ = self.train()
 
         return result

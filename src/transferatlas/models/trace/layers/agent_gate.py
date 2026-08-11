@@ -4,9 +4,11 @@ import torch
 from torch import nn
 from torch.nn.functional import one_hot
 
+from transferatlas.config import EncoderConfig
+
 
 class AgentGate(nn.Module):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: EncoderConfig) -> None:
         super().__init__()
         num_inputs = config["num_inputs"]
         num_hidden = config["num_hidden"]

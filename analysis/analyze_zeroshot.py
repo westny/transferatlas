@@ -82,7 +82,7 @@ def compute_zeroshot_correlation(
         n_boot=n_boot,
     )
     if plot:
-        plot_correlation(
+        _ = plot_correlation(
             df=data_frame,
             groups=groups,
             title=title,
@@ -178,7 +178,7 @@ def create_parser() -> ArgumentParser:
     parser = ArgumentParser(
         description="Reproduce the paper's zero-shot transfer correlation."
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--plot",
         action="store_true",
         help="display the correlation plot (requires a graphical backend and LaTeX)",

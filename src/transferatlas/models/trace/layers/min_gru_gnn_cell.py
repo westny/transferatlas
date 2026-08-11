@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import torch
 import torch_geometric.nn as pyg_nn
 from torch import nn
@@ -12,7 +14,7 @@ def _graphconv_stack(
     layers: int,
     dropout: float,
 ) -> pyg_nn.Sequential:
-    modules: list = []
+    modules: list[Callable[..., object] | tuple[Callable[..., object], str]] = []
     if layers == 1:
         modules.append(
             (
@@ -77,9 +79,9 @@ class GRUGNNCell(nn.Module):
         std = 1.0 / (self.hidden_size**0.5)
         for parameter in self.parameters():
             if parameter.dim() > 1:
-                nn.init.xavier_uniform_(parameter)
+                _ = nn.init.xavier_uniform_(parameter)
             else:
-                nn.init.uniform_(parameter, -std, std)
+                _ = nn.init.uniform_(parameter, -std, std)
 
     def forward(
         self,

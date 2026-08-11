@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import shutil
-from argparse import Namespace
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 import torch
 import yaml
 from lightning.pytorch.loggers import Logger, WandbLogger
 from lightning.pytorch.strategies import DDPStrategy
+
+from transferatlas.cli.arguments import CommonArgs
+from transferatlas.config import ExperimentConfig
 
 
 def require_graph_backend() -> None:
@@ -19,21 +21,18 @@ def require_graph_backend() -> None:
     except PackageNotFoundError as error:
         raise RuntimeError(
             "Training and latent extraction require a graph backend. Install one "
-            "with `uv sync --extra cpu` or `uv sync --extra cu126`."
+            + "with `uv sync --extra cpu` or `uv sync --extra cu126`."
         ) from error
 
     try:
-        radius_op = torch.ops.pyg.radius
+        _ = torch.ops.pyg.radius
     except AttributeError as error:
         raise RuntimeError(
             f"pyg-lib {pyg_lib_version} does not provide the radius operator for "
-            f"PyTorch {torch.__version__}. Recreate the environment with "
-            "`uv sync --extra cpu --reinstall` or "
-            "`uv sync --extra cu126 --reinstall`."
+            + f"PyTorch {torch.__version__}. Recreate the environment with "
+            + "`uv sync --extra cpu --reinstall` or "
+            + "`uv sync --extra cu126 --reinstall`."
         ) from error
-
-    if radius_op is None:
-        raise RuntimeError("The installed pyg-lib radius operator is unavailable.")
 
 
 def create_experiment_logger(
@@ -50,7 +49,7 @@ def create_experiment_logger(
 
 
 def configure_trainer_hardware(
-    args: Namespace,
+    args: CommonArgs,
 ) -> tuple[int, Literal["auto"] | DDPStrategy, str]:
     """Setup CUDA devices, strategy and accelerator.
 
@@ -74,14 +73,14 @@ def configure_trainer_hardware(
     return 1, "auto", "cpu"
 
 
-def load_config(config: str | Path) -> dict:
+def load_config(config: str | Path) -> ExperimentConfig:
     """Load a YAML configuration by exact name or filesystem path."""
     config_path = resolve_config_path(config)
     with config_path.open() as file:
         loaded = yaml.safe_load(file)
     if not isinstance(loaded, dict):
         raise TypeError(f"Configuration root must be a mapping: {config_path}")
-    return loaded
+    return cast(ExperimentConfig, cast(object, loaded))
 
 
 def resolve_config_path(config: str | Path) -> Path:
@@ -114,4 +113,4 @@ def copy_config_file(config: str | Path, destination: Path) -> None:
     """
     config_path = resolve_config_path(config)
     destination.mkdir(parents=True, exist_ok=True)
-    shutil.copy(config_path, destination / "used_config.yml")
+    _ = shutil.copy(config_path, destination / "used_config.yml")

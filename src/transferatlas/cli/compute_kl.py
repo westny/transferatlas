@@ -24,7 +24,7 @@ def _validate_statistics(statistics: GaussianStatistics, name: str) -> None:
     if covariance.shape != (mean.numel(), mean.numel()):
         raise ValueError(
             f"{name} covariance must have shape ({mean.numel()}, {mean.numel()}), "
-            f"got {tuple(covariance.shape)}."
+            + f"got {tuple(covariance.shape)}."
         )
     if not torch.isfinite(mean).all() or not torch.isfinite(covariance).all():
         raise ValueError(f"{name} statistics contain non-finite values.")
@@ -64,7 +64,7 @@ def gaussian_kl_divergence(
     if source.mean.shape != target.mean.shape:
         raise ValueError(
             "Source and target dimensions differ: "
-            f"{source.mean.numel()} != {target.mean.numel()}."
+            + f"{source.mean.numel()} != {target.mean.numel()}."
         )
 
     target_cholesky = torch.linalg.cholesky(target.covariance)
@@ -149,18 +149,18 @@ def create_parser() -> ArgumentParser:
     parser = ArgumentParser(
         description="Compute directed pairwise KL divergence between latent Gaussians."
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--stats-dir",
         type=Path,
         required=True,
         help="Directory containing one mean.pt/covariance.pt directory per dataset.",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--output",
         type=Path,
         help="Output CSV path (default: <stats-dir>/kl_divergence.csv).",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--datasets",
         nargs="+",
         help="Optional dataset names and output order (default: discovered alphabetically).",

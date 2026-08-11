@@ -4,11 +4,12 @@ import torch
 from torch import nn
 from torch_geometric.utils import subgraph
 
+from transferatlas.config import DecoderConfig
 from transferatlas.models.trace.layers.min_gru_gnn_cell import GRUGNNCell
 
 
 class PredictionDecoder(nn.Module):
-    def __init__(self, config: dict):
+    def __init__(self, config: DecoderConfig) -> None:
         super().__init__()
         num_hidden = config["num_latents"]
         num_outputs = config["num_outputs"]
@@ -55,7 +56,7 @@ class PredictionDecoder(nn.Module):
 
 
 class ReconstructionDecoder(nn.Module):
-    def __init__(self, config: dict):
+    def __init__(self, config: DecoderConfig) -> None:
         super().__init__()
         num_hidden = config["num_latents"]
         num_outputs = config["num_outputs"]

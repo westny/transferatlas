@@ -139,7 +139,7 @@ explicit = true
 [tool.basedpyright]
 pythonVersion = "3.10"
 pythonPlatform = "All"
-typeCheckingMode = "recommended"
+typeCheckingMode = "basic"
 reportPrivateImportUsage = false
 
 

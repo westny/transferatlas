@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TypedDict, cast
 
 import torch
 from torch import nn
 from torch_geometric.data import HeteroData
 
+from transferatlas.config import DecoderConfig, EncoderConfig, ModelConfig
 from transferatlas.models.trace.layers.agent_gate import AgentGate
 from transferatlas.models.trace.layers.decoders import (
     PredictionDecoder,
@@ -17,27 +19,36 @@ from transferatlas.models.trace.layers.map_encoder import (
     MultiGraphConvBipartite,
 )
 
-CHECKPOINT_FORMAT_VERSION = 1
+
+class _CheckpointState(TypedDict):
+    state_dict: dict[str, torch.Tensor]
+
+
+class _ModelCheckpoint(_CheckpointState, total=False):
+    model_config: ModelConfig
 
 
 class TraceModel(nn.Module):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: ModelConfig) -> None:
         super().__init__()
-        encoder_config = dict(config["encoder"])
-        predictor_config = dict(config["predictor"])
-        reconstructor_config = dict(config["reconstructor"])
-        encoder_config.update(
+        encoder_config = EncoderConfig(
+            **config["encoder"],
             num_hidden=config["num_hidden"],
             num_latents=config["num_latents"],
             num_inputs=config["num_inputs"],
         )
-        decoder_shared = {
-            "num_latents": config["num_latents"],
-            "num_outputs": config["num_outputs"],
-            "dt": config["dt"],
-        }
-        predictor_config.update(decoder_shared)
-        reconstructor_config.update(decoder_shared)
+        predictor_config = DecoderConfig(
+            **config["predictor"],
+            num_latents=config["num_latents"],
+            num_outputs=config["num_outputs"],
+            dt=config["dt"],
+        )
+        reconstructor_config = DecoderConfig(
+            **config["reconstructor"],
+            num_latents=config["num_latents"],
+            num_outputs=config["num_outputs"],
+            dt=config["dt"],
+        )
 
         self.dt = config["dt"]
 
@@ -60,7 +71,7 @@ class TraceModel(nn.Module):
 
     def save_portable_checkpoint(
         self,
-        model_config: dict,
+        model_config: ModelConfig,
         output_path: str | Path,
     ) -> Path:
         """Save the model configuration and weights used for inference."""
@@ -68,7 +79,6 @@ class TraceModel(nn.Module):
         output_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(
             {
-                "format_version": CHECKPOINT_FORMAT_VERSION,
                 "model_config": model_config,
                 "state_dict": {
                     name: tensor.detach().cpu()
@@ -83,37 +93,33 @@ class TraceModel(nn.Module):
     def from_checkpoint(
         cls,
         checkpoint_path: str | Path,
-        model_config: dict | None = None,
+        model_config: ModelConfig | None = None,
     ) -> TraceModel:
         """Construct TRACE from a portable or Lightning training checkpoint."""
-        checkpoint = torch.load(
-            Path(checkpoint_path).expanduser(),
-            map_location="cpu",
-            weights_only=True,
+        checkpoint = cast(
+            _ModelCheckpoint,
+            torch.load(
+                Path(checkpoint_path).expanduser(),
+                map_location="cpu",
+                weights_only=True,
+            ),
         )
-        if checkpoint.get("format_version") == CHECKPOINT_FORMAT_VERSION:
+        state_dict = checkpoint["state_dict"]
+        if "model_config" in checkpoint:
             model_config = checkpoint["model_config"]
-            state_dict = checkpoint["state_dict"]
-        elif "state_dict" in checkpoint:
-            if model_config is None:
-                raise ValueError(
-                    "model_config is required when loading a Lightning checkpoint."
-                )
+        elif model_config is not None:
             state_dict = {
                 name.removeprefix("model."): tensor
-                for name, tensor in checkpoint["state_dict"].items()
+                for name, tensor in state_dict.items()
                 if name.startswith("model.")
             }
         else:
             raise ValueError(
-                "Checkpoint must contain either portable model data or a Lightning "
-                "state_dict."
+                "model_config is required when loading a Lightning checkpoint."
             )
 
-        if model_config is None:
-            raise ValueError("Checkpoint does not define a model configuration.")
         model = cls(model_config)
-        model.load_state_dict(state_dict, strict=True)
+        _ = model.load_state_dict(state_dict, strict=True)
         return model
 
     def encode_env_interactions(
@@ -128,7 +134,15 @@ class TraceModel(nn.Module):
         wx = self.map2agent((map_embedding, x[:, -1]), edge_index, edge_attr)
         return self.map_norm(wx)
 
-    def construct_data(self, data: HeteroData):
+    def construct_data(
+        self, data: HeteroData
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         inp_pos = data["agent"]["inp_pos"]
 
         x = torch.cat(
@@ -157,7 +171,7 @@ class TraceModel(nn.Module):
         data: HeteroData,
         tf_prob: float = 0.0,
         encoder_only: bool = False,
-    ) -> dict:
+    ) -> dict[str, torch.Tensor]:
         x, x_emb, x_r, edge_index, edge_attr = self.construct_data(data)
         input_mask = data["agent"]["input_mask"]
         valid_mask = data["agent"]["valid_mask"]

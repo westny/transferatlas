@@ -5,6 +5,9 @@ from torchmetrics import Metric
 
 
 class _AverageMetric(Metric):
+    sum: torch.Tensor
+    count: torch.Tensor
+
     def __init__(self) -> None:
         super().__init__()
         self.add_state("sum", default=torch.tensor(0.0), dist_reduce_fx="sum")
@@ -15,7 +18,7 @@ class _AverageMetric(Metric):
         self.count += values.numel()
 
     def compute(self) -> torch.Tensor:
-        return self.sum / self.count  # type: ignore
+        return self.sum / self.count
 
 
 class MinADE(_AverageMetric):

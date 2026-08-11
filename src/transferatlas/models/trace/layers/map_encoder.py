@@ -5,6 +5,8 @@ from torch import nn
 from torch_geometric.data import HeteroData
 from torch_geometric.nn import GraphConv
 
+from transferatlas.config import LaneGraphConfig
+
 
 class MultiGraphConv(nn.Module):
     def __init__(
@@ -83,7 +85,7 @@ class MultiGraphConvBipartite(nn.Module):
 
 
 class MapEncoder(nn.Module):
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: LaneGraphConfig) -> None:
         super().__init__()
         edge_features = config["edge_feats"]
         dropout = config["dropout"]
