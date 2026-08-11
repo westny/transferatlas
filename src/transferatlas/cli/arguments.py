@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from argparse import ArgumentParser, ArgumentTypeError, Namespace
 from collections.abc import Sequence
 

@@ -3,6 +3,8 @@ name = "transferatlas"
 version = "0.1.0"
 description = "Trajectory transferability analysis through latent scene embeddings"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.14"
 
 dependencies = [
@@ -68,7 +70,7 @@ transferatlas-kl = "transferatlas.cli.compute_kl:main"
 # ---------------------------------------------------------------------------
 
 [build-system]
-requires = ["hatchling>=1.26,<2"]
+requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 
