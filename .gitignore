@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# Testing / type checking
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.coverage
+htmlcov/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# PyTorch / Lightning
+lightning_logs/
+checkpoints/
+*.ckpt
+
+# Weights & Biases
+wandb/
+
+# TensorBoard
+runs/
+
+# Temporary outputs
+logs/
+outputs/
+tmp/
+*.log
